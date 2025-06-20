@@ -20,8 +20,15 @@ async function searchPDF(criteria, entity) {
     
     // Add a search condition.
     // Here we search for items whose title contains the specified text.
-    search.addCondition("title", "contains", criteria.title);
+    search.addCondition("title", "contains", criteria.title.split(' ').slice(0, 3).join(' '));
+    
+    // If the author is specified, add a condition for the creator.
+    // Note: The creator field is used for authors, editors, etc.
     search.addCondition("creator", "contains", criteria.author);
+    
+    // Add a condition for the year if specified.
+    // This assumes the year is a four-digit number.
+    // search.addCondition("year", "contains", criteria.year);
     
     // (Optional) To search another field (e.g., abstract notes), uncomment below:
     // search.addCondition("abstractNote", "contains", searchText);
@@ -46,9 +53,15 @@ async function searchPDF(criteria, entity) {
         + '\n for \n📄 ' + entity; 
     };
     
-    return items.length + " item(s) found: \n"
-        + items.map(item => item.getField("title")).join('\n')
-        + '\n for \n🔍 ' + entity; 
+    let hasSameAuthor = items.filter(item => item.getCreators()?.shift(0)?.lastName === criteria.author);
+
+    if (hasSameAuthor.length === 0) {
+        return "No items found matching for:\n🆖 " + entity;
+    }
+
+    return hasSameAuthor.length + " item(s) found: \n"
+        + hasSameAuthor.map(item => item.getField("title")).join('\n')
+        + '\n for \n❓ ' + entity;
 }
 
 async function main() {
